@@ -16,7 +16,6 @@
   <a href="#project-structure">Project Structure</a> •
   <a href="#customization">Customization</a> •
   <a href="#deployment">Deployment</a> •
-  <a href="#license">License</a>
 </p>
 
 <p align="center">
@@ -74,7 +73,7 @@ cp .env.example .env
 # Start development server
 npm run dev
 
-# Open browser at http://localhost:3000
+# Open browser at http://localhost:4321
 ```
 
 ### Build
