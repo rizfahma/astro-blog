@@ -1,0 +1,521 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+
+const navItems = [
+  { text: 'Home', href: '/' },
+  { text: 'Blog', href: '/blog' },
+  { text: 'Tags', href: '/tags' },
+  { text: 'About', href: '/about' },
+];
+
+// Get current path for active link highlighting
+const pathname = new URL(Astro.request.url).pathname;
+const currentPath = pathname.slice(1); // remove the first "/"
+---
+
+<header id="main-header" class="py-4 fixed top-0 left-0 right-0 z-50 transition-all duration-300 w-full bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800">
+  <div class="w-full max-w-3xl mx-auto px-5">
+    <nav class="flex items-center justify-between">
+      <!-- Logo -->
+      <a href="/" class="font-bold text-xl tracking-tight text-zinc-900 dark:text-white">
+        JD
+      </a>
+      
+      <!-- Mobile Navigation Controls -->
+      <div class="flex sm:hidden items-center">
+        <a 
+          href="/rss.xml" 
+          class="flex items-center justify-center h-10 w-10 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
+          aria-label="RSS Feed"
+          title="RSS Feed"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+            <path d="M4 11a9 9 0 0 1 9 9"></path>
+            <path d="M4 4a16 16 0 0 1 16 16"></path>
+            <circle cx="5" cy="19" r="1"></circle>
+          </svg>
+        </a>
+        <div class="h-6 w-px bg-zinc-200 dark:bg-zinc-700"></div>
+        <div class="flex items-center justify-center h-10 w-10">
+          <ThemeToggle />
+        </div>
+        <div class="h-6 w-px bg-zinc-200 dark:bg-zinc-700"></div>
+        <button 
+          id="mobile-menu-button" 
+          class="flex items-center justify-center h-10 w-10 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
+          aria-label="Toggle menu"
+          aria-expanded="false"
+        >
+          <div class="burger-icon w-6 h-5 relative flex flex-col justify-between">
+            <span class="burger-line"></span>
+            <span class="burger-line"></span>
+            <span class="burger-line"></span>
+          </div>
+        </button>
+      </div>
+      
+      <!-- Desktop Navigation -->
+      <div class="hidden sm:flex items-center gap-4">
+        <ul class="flex items-center gap-1 md:gap-2">
+          {navItems.map(item => {
+            const isActive = currentPath === (item.href === '/' ? '' : item.href.slice(1));
+            return (
+              <li>
+                <a 
+                  href={item.href} 
+                  class={`relative px-2 md:px-3 py-2 text-sm font-medium rounded-md transition-all duration-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 ${
+                    isActive 
+                      ? 'text-zinc-900 dark:text-zinc-100 after:absolute after:bottom-0 after:left-0 after:right-0 after:mx-auto after:h-0.5 after:w-1/2 after:bg-zinc-900 dark:after:bg-zinc-100' 
+                      : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100'
+                  }`}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  {item.text}
+                </a>
+              </li>
+            )
+          })}
+        </ul>
+        <div class="h-6 w-px bg-zinc-200 dark:bg-zinc-700"></div>
+        <a 
+          href="/rss.xml" 
+          class="text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
+          aria-label="RSS Feed"
+          title="RSS Feed"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+            <path d="M4 11a9 9 0 0 1 9 9"></path>
+            <path d="M4 4a16 16 0 0 1 16 16"></path>
+            <circle cx="5" cy="19" r="1"></circle>
+          </svg>
+        </a>
+        <div class="h-6 w-px bg-zinc-200 dark:bg-zinc-700"></div>
+        <ThemeToggle />
+      </div>
+    </nav>
+  </div>
+  
+  <!-- Mobile Navigation Menu -->
+  <div id="mobile-menu" class="fixed inset-0 z-40 pointer-events-none">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-zinc-900/50 dark:bg-black/50 backdrop-blur-sm opacity-0 transition-opacity duration-300 ease-out"></div>
+    
+    <!-- Menu Content -->
+    <div class="absolute top-0 right-0 w-[75%] max-w-sm h-full bg-white dark:bg-zinc-900 shadow-xl transform translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col">
+      <!-- Close button -->
+      <div class="flex justify-end p-4">
+        <button id="close-menu-button" class="p-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors rounded-md">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Menu items -->
+      <div class="flex-1 overflow-y-auto px-4 py-2">
+        <ul class="space-y-1">
+          {navItems.map((item, index) => {
+            const isActive = currentPath === (item.href === '/' ? '' : item.href.slice(1));
+            return (
+              <li class="menu-item opacity-0 translate-x-8" style={`--delay: ${(index + 1) * 0.05}s`}>
+                <a 
+                  href={item.href} 
+                  class={`block py-3 px-4 text-lg font-medium rounded-lg transition-all duration-200 ${isActive 
+                    ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white' 
+                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white'}`}
+                >
+                  {item.text}
+                </a>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+      
+      <!-- Footer -->
+      <div class="border-t border-zinc-100 dark:border-zinc-800 p-4 flex items-center justify-between opacity-0 translate-y-4 menu-footer">
+        <span class="text-sm text-zinc-500 dark:text-zinc-500">© 2025 JD Blog</span>
+        <a 
+          href="/rss.xml" 
+          class="text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
+          aria-label="RSS Feed"
+          title="RSS Feed"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+            <path d="M4 11a9 9 0 0 1 9 9"></path>
+            <path d="M4 4a16 16 0 0 1 16 16"></path>
+            <circle cx="5" cy="19" r="1"></circle>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="h-[60px] sm:h-16"></div> <!-- Spacer to prevent content from hiding behind fixed header -->
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const closeMenuButton = document.getElementById('close-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const menuBackdrop = mobileMenu?.querySelector('.absolute.inset-0');
+    const menuContent = mobileMenu?.querySelector('.absolute.top-0.right-0');
+    const menuItems = document.querySelectorAll('.menu-item');
+    const menuFooter = document.querySelector('.menu-footer');
+    const burgerIcon = document.querySelector('.burger-icon');
+    
+    // Improved theme toggle functionality
+    const themeToggles = document.querySelectorAll('[data-theme-toggle]');
+    themeToggles.forEach(toggle => {
+      // Remove any existing event listeners
+      const newToggle = toggle.cloneNode(true);
+      toggle.parentNode.replaceChild(newToggle, toggle);
+      
+      // Add new event listener with proper event handling
+      newToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Manually trigger theme change
+        const isDark = document.documentElement.classList.contains('dark');
+        document.documentElement.classList.toggle('dark');
+        localStorage.setItem('theme', isDark ? 'light' : 'dark');
+        
+        // Dispatch a custom event for other components to react to
+        document.dispatchEvent(new CustomEvent('themeChanged', { detail: { isDark: !isDark } }));
+      });
+    });
+    
+    let isMenuOpen = false;
+    
+    // Toggle mobile menu with animations
+    const toggleMenu = () => {
+      if (!mobileMenu || !menuBackdrop || !menuContent || !burgerIcon) return;
+      
+      isMenuOpen = !isMenuOpen;
+      
+      if (isMenuOpen) {
+        // Open menu
+        document.body.style.overflow = 'hidden'; // Prevent scrolling
+        mobileMenu.classList.add('pointer-events-auto');
+        
+        // Animate backdrop
+        menuBackdrop.classList.remove('opacity-0');
+        
+        // Animate menu slide in
+        menuContent.classList.remove('translate-x-full');
+        
+        // Animate burger to X
+        burgerIcon.classList.add('active');
+        
+        // Animate menu items with staggered delay
+        menuItems.forEach((item) => {
+          setTimeout(() => {
+            item.classList.remove('opacity-0', 'translate-x-8');
+          }, parseFloat(item.style.getPropertyValue('--delay').replace('s', '')) * 1000);
+        });
+        
+        // Animate footer
+        setTimeout(() => {
+          menuFooter?.classList.remove('opacity-0', 'translate-y-4');
+        }, 300);
+      } else {
+        // Close menu
+        
+        // Animate backdrop
+        menuBackdrop.classList.add('opacity-0');
+        
+        // Animate menu slide out
+        menuContent.classList.add('translate-x-full');
+        
+        // Animate X to burger
+        burgerIcon.classList.remove('active');
+        
+        // Reset menu items for next opening
+        menuItems.forEach(item => {
+          item.classList.add('opacity-0', 'translate-x-8');
+        });
+        
+        // Reset footer
+        menuFooter?.classList.add('opacity-0', 'translate-y-4');
+        
+        // Delay removing pointer events until animation completes
+        setTimeout(() => {
+          mobileMenu.classList.remove('pointer-events-auto');
+          document.body.style.overflow = ''; // Restore scrolling
+        }, 500);
+      }
+    };
+    
+    // Add click event to menu button
+    mobileMenuButton?.addEventListener('click', toggleMenu);
+    
+    // Add click event to close button
+    closeMenuButton?.addEventListener('click', toggleMenu);
+    
+    // Close menu when clicking backdrop
+    menuBackdrop?.addEventListener('click', toggleMenu);
+    
+    // Close menu when clicking a link
+    const menuLinks = mobileMenu?.querySelectorAll('a');
+    menuLinks?.forEach(link => {
+      link.addEventListener('click', () => {
+        if (isMenuOpen) {
+          toggleMenu();
+        }
+      });
+    });
+    
+    // Close menu on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isMenuOpen) {
+        toggleMenu();
+      }
+    });
+    
+    // Close menu on resize if screen becomes larger
+    window.addEventListener('resize', () => {
+      if (isMenuOpen && window.innerWidth >= 640) {
+        toggleMenu();
+      }
+    });
+    
+    // SPA Transition handling
+    function setupSPATransitions() {
+      // Handle all navigation links for SPA transitions
+      const navLinks = document.querySelectorAll('header a[href^="/"]');
+      
+      navLinks.forEach(link => {
+        // Skip links that are anchor links, external links, or already processed
+        if (link.getAttribute('href').includes('#') || 
+            link.getAttribute('target') === '_blank' || 
+            link.hasAttribute('data-spa-handled')) {
+          return;
+        }
+        
+        // Mark as handled to avoid duplicate listeners
+        link.setAttribute('data-spa-handled', 'true');
+        
+        link.addEventListener('click', (e) => {
+          // Don't handle if modifier keys are pressed (for opening in new tab, etc.)
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+            return;
+          }
+          
+          e.preventDefault();
+          const targetHref = link.getAttribute('href');
+          const currentPath = window.location.pathname;
+          
+          // Don't transition if clicking the current page
+          if (targetHref === currentPath) {
+            return;
+          }
+          
+          // Create or get page transition element
+          let pageTransition = document.getElementById('page-transition');
+          
+          if (!pageTransition) {
+            pageTransition = document.createElement('div');
+            pageTransition.id = 'page-transition';
+            pageTransition.className = 'fixed inset-0 z-[100] bg-white dark:bg-zinc-900 opacity-0 pointer-events-none transition-opacity duration-300 flex items-center justify-center';
+            
+            // Add loading animation
+            const loadingSpinner = document.createElement('div');
+            loadingSpinner.className = 'w-12 h-12 border-4 border-zinc-300 dark:border-zinc-700 border-t-zinc-800 dark:border-t-zinc-200 rounded-full animate-spin';
+            pageTransition.appendChild(loadingSpinner);
+            
+            document.body.appendChild(pageTransition);
+          }
+          
+          // Trigger exit animation for current page
+          document.body.classList.add('page-transitioning');
+          
+          // Animate navigation highlight before transition
+          const currentNavItem = document.querySelector(`header a[href="${currentPath}"]`);
+          const targetNavItem = document.querySelector(`header a[href="${targetHref}"]`);
+          
+          if (currentNavItem) {
+            currentNavItem.classList.add('nav-item-exiting');
+          }
+          
+          if (targetNavItem) {
+            targetNavItem.classList.add('nav-item-entering');
+          }
+          
+          // Show transition overlay
+          pageTransition.classList.remove('opacity-0', 'pointer-events-none');
+          pageTransition.classList.add('opacity-100');
+          
+          // Navigate after transition effect
+          setTimeout(() => {
+            window.location.href = targetHref;
+          }, 300);
+        });
+      });
+      
+      // Handle header animation on page load
+      const header = document.getElementById('main-header');
+      if (header) {
+        header.classList.add('header-loaded');
+      }
+      
+      // Animate nav items on page load
+      const navItems = document.querySelectorAll('header li a');
+      navItems.forEach((item, index) => {
+        setTimeout(() => {
+          item.classList.add('nav-item-loaded');
+        }, 100 + (index * 50));
+      });
+    }
+    
+    // Initialize SPA transitions
+    setupSPATransitions();
+    
+    // Re-initialize when content changes via Astro's view transitions
+    document.addEventListener('astro:page-load', setupSPATransitions);
+    
+    // For compatibility with custom transition system
+    document.addEventListener('page-transition-complete', setupSPATransitions);
+    
+    // Handle page transition completion
+    window.addEventListener('pageshow', (event) => {
+      // Remove transition overlay when back button is used
+      const pageTransition = document.getElementById('page-transition');
+      if (pageTransition) {
+        pageTransition.classList.add('opacity-0', 'pointer-events-none');
+        pageTransition.classList.remove('opacity-100');
+      }
+      
+      // Remove transitioning class
+      document.body.classList.remove('page-transitioning');
+      
+      // Reset nav items
+      document.querySelectorAll('.nav-item-exiting, .nav-item-entering').forEach(item => {
+        item.classList.remove('nav-item-exiting', 'nav-item-entering');
+      });
+    });
+  });
+</script>
+
+<style>
+  /* Header styles */
+  #main-header {
+    background-color: white;
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    opacity: 0;
+    transform: translateY(-10px);
+    animation: headerSlideDown 0.5s forwards 0.2s;
+  }
+  
+  @keyframes headerSlideDown {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .header-loaded {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  :global(.dark) #main-header {
+    background-color: rgb(24, 24, 27);
+  }
+  
+  /* Burger menu icon animation */
+  .burger-line {
+    @apply bg-zinc-600 dark:bg-zinc-400 h-0.5 w-full rounded-full transition-all duration-300 ease-in-out;
+    transform-origin: center;
+  }
+  
+  .burger-icon.active .burger-line:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+    @apply bg-zinc-900 dark:bg-zinc-100;
+  }
+  
+  .burger-icon.active .burger-line:nth-child(2) {
+    opacity: 0;
+  }
+  
+  .burger-icon.active .burger-line:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+    @apply bg-zinc-900 dark:bg-zinc-100;
+  }
+  
+  /* Menu item animations */
+  .menu-item {
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  
+  .menu-footer {
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  
+  /* Ensure no horizontal overflow */
+  :global(html), :global(body) {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  /* Fix for iOS Safari notch */
+  @supports (padding: max(0px)) {
+    #main-header {
+      padding-left: max(1.25rem, env(safe-area-inset-left));
+      padding-right: max(1.25rem, env(safe-area-inset-right));
+    }
+    
+    #mobile-menu .absolute.top-0.right-0 {
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
+      padding-right: max(0px, env(safe-area-inset-right));
+    }
+  }
+  
+  /* SPA Transition Animations */
+  :global(body.page-transitioning) {
+    pointer-events: none;
+  }
+  
+  /* Navigation item animations */
+  header li a {
+    opacity: 0;
+    transform: translateY(-5px);
+    transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  header li a.nav-item-loaded {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  header li a.nav-item-exiting {
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  
+  header li a.nav-item-entering {
+    opacity: 0;
+    transform: translateY(-5px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  
+  /* Page transition overlay */
+  #page-transition {
+    transition: opacity 0.3s ease;
+  }
+  
+  /* Loading spinner animation */
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+</style>
+

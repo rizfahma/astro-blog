@@ -1,0 +1,237 @@
+---
+import Layout from './Layout.astro';
+import FormattedDate from '../components/FormattedDate.astro';
+import ShareButtons from '../components/ShareButtons.astro';
+import TagList from '../components/TagList.astro';
+// Remove LikeButton import
+
+export interface Props {
+  title: string;
+  description: string;
+  pubDate: Date;
+  updatedDate?: Date;
+  heroImage?: string;
+  readingTime?: string;
+  tags?: string[];
+}
+
+const { title, description, pubDate, updatedDate, heroImage, readingTime = '5 min read', tags = [] } = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const slug = Astro.url.pathname.split('/').filter(Boolean).pop() || ''; // Ensure slug is a string
+---
+
+<Layout title={title} description={description}>
+  <article class="prose dark:prose-invert prose-zinc lg:prose-lg mx-auto max-w-4xl">
+    <div class="mb-12">
+      <h1 class="mb-4 text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-5xl">
+        {title}
+      </h1>
+      
+      <div class="flex items-center gap-x-4 text-sm text-zinc-500 dark:text-zinc-400 mb-6">
+        <FormattedDate date={pubDate} />
+        {readingTime && <span>· {readingTime}</span>}
+      </div>
+      
+      <TagList tags={tags} class="mt-2" />
+    </div>
+    
+    {heroImage && (
+      <div class="relative mb-16 overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500">
+        <img 
+          src={heroImage} 
+          alt={title}
+          class="w-full aspect-video object-cover transition-transform duration-700 hover:scale-[1.02]"
+          loading="lazy"
+        />
+      </div>
+    )}
+    
+    <div class="prose-lg prose-headings:font-medium prose-a:text-indigo-600 dark:prose-a:text-indigo-400 hover:prose-a:underline">
+      <slot />
+    </div>
+    
+    <!-- Add the like button after the content -->
+    <div class="mt-12 pt-8 border-t border-zinc-200 dark:border-zinc-800">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-6">
+        <ShareButtons url={canonicalURL.toString()} title={title} /> <!-- Convert URL to string -->
+      </div>
+    </div>
+    
+    {updatedDate && (
+      <div class="mt-8 text-sm text-zinc-500 dark:text-zinc-400 italic">
+        Last updated on <FormattedDate date={updatedDate} />
+      </div>
+    )}
+  </article>
+  
+  <slot name="after-article" />
+</Layout>
+
+<script>
+  // Enhanced blog post SPA transitions
+  function setupBlogPostTransitions() {
+    // Animate article entrance
+    const article = document.querySelector('article');
+    if (article) {
+      article.classList.add('article-entering');
+      
+      // Remove class after animation completes
+      setTimeout(() => {
+        article.classList.remove('article-entering');
+      }, 1000);
+    }
+    
+    // Animate hero image with parallax effect on scroll
+    const heroImage = document.querySelector('article img');
+    if (heroImage) {
+      const handleScroll = () => {
+        const scrollPos = window.scrollY;
+        const scrollFactor = 0.05; // Adjust for more/less parallax effect
+        const yPos = scrollPos * scrollFactor;
+        
+        if (yPos < 100) { // Limit the parallax effect
+          heroImage.style.transform = `translateY(${yPos}px) scale(1.02)`;
+        }
+      };
+      
+      window.addEventListener('scroll', handleScroll);
+      
+      // Clean up event listener when navigating away
+      document.addEventListener('spa-navigation-start', () => {
+        window.removeEventListener('scroll', handleScroll);
+      });
+    }
+    
+    // Handle prev/next navigation links
+    const navLinks = document.querySelectorAll('.blog-nav-link');
+    navLinks.forEach(link => {
+      if (!link.hasAttribute('data-spa-handled')) {
+        link.setAttribute('data-spa-handled', 'true');
+        
+        link.addEventListener('mouseenter', () => {
+          link.classList.add('nav-link-hover');
+        });
+        
+        link.addEventListener('mouseleave', () => {
+          link.classList.remove('nav-link-hover');
+        });
+      }
+    });
+    
+    // Animate headings when they enter the viewport
+    const animateHeadings = () => {
+      const headings = document.querySelectorAll('article h2, article h3');
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('heading-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, {
+        threshold: 0.2,
+        rootMargin: '0px 0px -100px 0px'
+      });
+      
+      headings.forEach(heading => {
+        heading.classList.add('heading-animated');
+        observer.observe(heading);
+      });
+      
+      return observer;
+    };
+    
+    // Initialize heading animations
+    const headingObserver = animateHeadings();
+    
+    // Clean up observers when navigating away
+    document.addEventListener('spa-navigation-start', () => {
+      if (headingObserver) {
+        headingObserver.disconnect();
+      }
+    });
+  }
+  
+  // Initialize on first load
+  document.addEventListener('DOMContentLoaded', setupBlogPostTransitions);
+  
+  // Re-initialize when content changes via Astro's view transitions
+  document.addEventListener('astro:page-load', setupBlogPostTransitions);
+  
+  // For compatibility with custom transition system
+  document.addEventListener('page-transition-complete', setupBlogPostTransitions);
+  
+  // Also initialize when SPA navigation completes
+  document.addEventListener('spa-navigation-complete', setupBlogPostTransitions);
+</script>
+
+<style is:global>
+  /* Article entrance animation */
+  article {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  article.article-entering {
+    animation: article-fade-in 0.8s ease forwards;
+  }
+  
+  @keyframes article-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Hero image hover effect */
+  article img {
+    transition: transform 0.7s cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  
+  /* Heading animations */
+  article .heading-animated {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  
+  article .heading-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  /* Navigation link hover effect */
+  .blog-nav-link {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .blog-nav-link.nav-link-hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Ensure dark mode compatibility */
+  :global(.dark) .blog-nav-link.nav-link-hover {
+    box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Improve code block readability */
+  article pre {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  article pre:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.1);
+  }
+  
+  :global(.dark) article pre:hover {
+    box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.3);
+  }
+</style>
+
