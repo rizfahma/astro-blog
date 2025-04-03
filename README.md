@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img src="public/screenshot.png" alt="Astro Blog Screenshot" width="800">
+  <img src="public/image.png" alt="Astro Blog Screenshot" width="800">
 </p>
 
 ## Demo
