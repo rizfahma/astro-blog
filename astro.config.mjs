@@ -1,9 +1,16 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
+import react from '@astrojs/react'; // Add this line
 
 // https://astro.build/config
 export default defineConfig({
-  integrations: [tailwind()],
+  // Add your site URL here
+  site: 'https://your-site-url.com', // Replace with your actual domain
+  integrations: [
+    tailwind(),
+    react(),
+    
+  ],
   vite: {
     // Đảm bảo biến môi trường được chuyển đến client
     define: {

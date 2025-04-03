@@ -16,8 +16,47 @@ export interface Props {
 }
 
 const { title, description, pubDate, updatedDate, heroImage, readingTime = '5 min read', tags = [] } = Astro.props;
-const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+
+// Fix for the canonicalURL creation
+let canonicalURL;
+try {
+  canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://example.com');
+} catch (error) {
+  console.error('Error creating canonical URL:', error);
+  canonicalURL = new URL('https://example.com');
+}
+
 const slug = Astro.url.pathname.split('/').filter(Boolean).pop() || ''; // Ensure slug is a string
+
+// Xử lý heroImage an toàn hơn - hỗ trợ cả URL tuyệt đối và đường dẫn tương đối
+let heroImageUrl = null;
+if (heroImage) {
+  try {
+    // Kiểm tra nếu là URL đầy đủ
+    if (heroImage.startsWith('http')) {
+      heroImageUrl = heroImage;
+    } 
+    // Kiểm tra nếu là đường dẫn tương đối
+    else if (heroImage.startsWith('/')) {
+      // Nếu Astro.site tồn tại, sử dụng nó làm cơ sở
+      if (Astro.site) {
+        heroImageUrl = new URL(heroImage, Astro.site).toString();
+      } 
+      // Nếu không, sử dụng đường dẫn tương đối như đã cung cấp
+      else {
+        heroImageUrl = heroImage;
+      }
+    }
+    // Trường hợp khác
+    else {
+      heroImageUrl = heroImage;
+    }
+  } catch (error) {
+    console.error(`Error processing heroImage: ${heroImage}`, error);
+    // Sử dụng đường dẫn gốc nếu có lỗi
+    heroImageUrl = heroImage;
+  }
+}
 ---
 
 <Layout title={title} description={description}>
@@ -38,7 +77,7 @@ const slug = Astro.url.pathname.split('/').filter(Boolean).pop() || ''; // Ensur
     {heroImage && (
       <div class="relative mb-16 overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500">
         <img 
-          src={heroImage} 
+          src={heroImageUrl} 
           alt={title}
           class="w-full aspect-video object-cover transition-transform duration-700 hover:scale-[1.02]"
           loading="lazy"
@@ -234,4 +273,3 @@ const slug = Astro.url.pathname.split('/').filter(Boolean).pop() || ''; // Ensur
     box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.3);
   }
 </style>
-

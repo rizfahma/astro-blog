@@ -2,7 +2,7 @@
 title: "Optimizing Web Performance for Better UX"
 description: "Tips and techniques for improving your website's performance and providing a better user experience."
 pubDate: 2023-01-18
-heroImage: "/placeholder.svg?height=630&width=1200"
+heroImage: "/i.jpg"
 readingTime: "8 min read"
 tags: ["performance", "web development", "user experience"]
 ---
