@@ -15,11 +15,22 @@ export async function getStaticPaths() {
     // Tính toán readingTime từ nội dung markdown
     const readingTimeResult = readingTime(entry.body);
     
+    // Định dạng thời gian đọc thành chuỗi dễ đọc
+    let readingTimeStr;
+    if (readingTimeResult.minutes < 1) {
+      readingTimeStr = 'Dưới 1 phút đọc';
+    } else {
+      // Làm tròn lên và định dạng thành "X phút đọc"
+      const minutes = Math.ceil(readingTimeResult.minutes);
+      readingTimeStr = `${minutes} phút đọc`;
+    }
+    
     return {
       params: { slug: entry.slug },
       props: { 
         entry,
-        readingTimeValue: readingTimeResult,
+        readingTimeValue: readingTimeStr, // Truyền chuỗi đã định dạng
+        readingTimeStats: readingTimeResult, // Truyền toàn bộ thông tin thống kê
         nextPost: index > 0 ? sortedEntries[index - 1] : null,
         prevPost: index < sortedEntries.length - 1 ? sortedEntries[index + 1] : null
       },
@@ -27,20 +38,15 @@ export async function getStaticPaths() {
   });
 }
 
-const { entry, nextPost, prevPost, readingTimeValue } = Astro.props;
+const { entry, nextPost, prevPost, readingTimeValue, readingTimeStats } = Astro.props;
 const { Content } = await entry.render();
+
+// Ghi đè readingTime từ frontmatter nếu có, nếu không thì sử dụng giá trị đã tính
+const finalReadingTime = entry.data.readingTime || readingTimeValue;
 ---
 
-export const prerender = true;
 
-<BlogPost {...entry.data} readingTime={readingTimeValue}>
-  <div class="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-0">
-   <!-- Table of Contents - Responsive positioning -->
-<div class="hidden lg:block lg:fixed lg:right-4 xl:right-[calc(50%-720px)] 2xl:right-[calc(50%-800px)] lg:top-32 lg:w-56 xl:w-64 p-4 xl:p-6 border-l border-zinc-200 dark:border-zinc-800 transition-all duration-300 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm rounded-r-lg shadow-sm lg:max-h-[calc(100vh-200px)] lg:overflow-y-auto">
-  <h3 class="text-sm font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-4">On this page</h3>
-  <nav class="toc text-sm space-y-1 pr-2 scrollbar-thin"></nav>
-</div>
-
+<BlogPost {...entry.data} readingTime={finalReadingTime}>
     <!-- Main Content - Enhanced with better typography and spacing -->
     <div class="prose prose-zinc dark:prose-invert max-w-none prose-headings:scroll-mt-24 prose-headings:font-semibold prose-a:text-zinc-800 dark:prose-a:text-zinc-300 prose-a:font-medium prose-a:underline-offset-4 hover:prose-a:text-zinc-600 dark:hover:prose-a:text-zinc-100 prose-img:rounded-xl sm:prose-base prose-sm">
       <Content />
@@ -60,33 +66,9 @@ export const prerender = true;
             </svg>
             Previous Article
           </span>
-          <h3 class="relative z-10 mt-1 text-base sm:text-lg font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors line-clamp-2">
+          <h3 class="text-base sm:text-lg font-medium text-zinc-900 dark:text-white line-clamp-2 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors">
             {prevPost.data.title}
           </h3>
-          {prevPost.data.pubDate && (
-            <time datetime={prevPost.data.pubDate.toISOString()} class="relative z-10 mt-1 sm:mt-2 text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-1 sm:gap-1.5">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 sm:w-4 sm:h-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-              </svg>
-              <span class="hidden xs:inline">{prevPost.data.pubDate.toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}</span>
-              <span class="xs:hidden">{prevPost.data.pubDate.toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric' 
-              })}</span>
-            </time>
-          )}
-          {prevPost.data.tags && prevPost.data.tags.length > 0 && (
-            <div class="relative z-10 mt-2 sm:mt-3 flex flex-wrap gap-1 sm:gap-2">
-              <span class="inline-flex items-center rounded-full bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-xs font-medium text-zinc-800 dark:text-zinc-200">
-                #{prevPost.data.tags[0]}
-              </span>
-            </div>
-          )}
         </a>
       )}
       {nextPost && (
@@ -95,204 +77,30 @@ export const prerender = true;
           class="group relative flex flex-col h-full p-4 sm:p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all duration-300 hover:-translate-y-1 md:text-right overflow-hidden"
         >
           <div class="absolute inset-0 bg-gradient-to-l from-zinc-100 to-transparent dark:from-zinc-800 dark:to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <span class="relative z-10 text-xs sm:text-sm font-medium text-zinc-500 dark:text-zinc-400 flex items-center gap-1 sm:gap-2 md:justify-end mb-1 sm:mb-2">
+          <span class="relative z-10 text-xs sm:text-sm font-medium text-zinc-500 dark:text-zinc-400 flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2 md:justify-end">
             Next Article
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 sm:w-4 sm:h-4 transition-transform duration-300 group-hover:translate-x-1">
               <path d="m9 18 6-6-6-6"></path>
             </svg>
           </span>
-          <h3 class="relative z-10 mt-1 text-base sm:text-lg font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors line-clamp-2">
+          <h3 class="text-base sm:text-lg font-medium text-zinc-900 dark:text-white line-clamp-2 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors">
             {nextPost.data.title}
           </h3>
-          {nextPost.data.pubDate && (
-            <time datetime={nextPost.data.pubDate.toISOString()} class="relative z-10 mt-1 sm:mt-2 text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-1 sm:gap-1.5 md:justify-end">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 sm:w-4 sm:h-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-              </svg>
-              <span class="hidden xs:inline">{nextPost.data.pubDate.toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}</span>
-              <span class="xs:hidden">{nextPost.data.pubDate.toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric' 
-              })}</span>
-            </time>
-          )}
-          {nextPost.data.tags && nextPost.data.tags.length > 0 && (
-            <div class="relative z-10 mt-2 sm:mt-3 flex flex-wrap gap-1 sm:gap-2 md:justify-end">
-              <span class="inline-flex items-center rounded-full bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-xs font-medium text-zinc-800 dark:text-zinc-200">
-                #{nextPost.data.tags[0]}
-              </span>
-            </div>
-          )}
         </a>
       )}
     </div>
-    
-    <!-- Mobile TOC button - Only visible on small screens -->
-    <button id="mobile-toc-button" class="lg:hidden fixed bottom-6 right-6 z-50 bg-zinc-800 dark:bg-zinc-700 text-white p-3 rounded-full shadow-lg">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-      </svg>
-    </button>
-    
-    <!-- Mobile TOC drawer - Hidden by default -->
-    <div id="mobile-toc" class="lg:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
-      <div class="absolute right-0 top-0 bottom-0 w-64 bg-white dark:bg-zinc-900 shadow-xl transform translate-x-full transition-transform duration-300 p-6 overflow-y-auto">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-sm font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">On this page</h3>
-          <button id="close-toc" class="text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <nav class="mobile-toc text-sm space-y-1"></nav>
-      </div>
-    </div>
-  </div>
 </BlogPost>
 
 <script>
-  // Generate table of contents with active state tracking
-  function initializeTOC() {
-    const headings = document.querySelectorAll('.prose h2, .prose h3');
-    const toc = document.querySelector('.toc');
-    const mobileToc = document.querySelector('.mobile-toc');
-    
-    if ((toc || mobileToc) && headings.length > 0) {
-      // Clear existing TOC content to avoid duplicates on SPA navigation
-      if (toc) toc.innerHTML = '';
-      if (mobileToc) mobileToc.innerHTML = '';
-      
-      // Create TOC links
-      headings.forEach((heading, index) => {
-        // Add ID to heading if it doesn't have one
-        if (!heading.id) {
-          heading.id = `heading-${index}`;
-        }
-        
-        const link = document.createElement('a');
-        link.href = `#${heading.id}`;
-        link.textContent = heading.textContent;
-        link.className = heading.tagName === 'H2' 
-          ? 'block py-1.5 px-3 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors duration-200 font-medium' 
-          : 'block py-1 px-3 ml-4 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors duration-200';
-        
-        // Add to desktop TOC
-        if (toc) {
-          const tocLink = link.cloneNode(true);
-          toc.appendChild(tocLink);
-        }
-        
-        // Add to mobile TOC
-        if (mobileToc) {
-          const mobileTocLink = link.cloneNode(true);
-          mobileToc.appendChild(mobileTocLink);
-          
-          // Close mobile TOC when clicking a link
-          mobileTocLink.addEventListener('click', () => {
-            document.getElementById('mobile-toc').classList.add('opacity-0', 'pointer-events-none');
-            document.getElementById('mobile-toc').querySelector('div').classList.add('translate-x-full');
-          });
-        }
-      });
-      
-      // Track active heading on scroll
-      const tocLinks = document.querySelectorAll('.toc a, .mobile-toc a');
-      const observerOptions = {
-        rootMargin: '-100px 0px -66%',
-        threshold: 0
-      };
-      
-      const headingObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          const id = entry.target.getAttribute('id');
-          const tocLinks = document.querySelectorAll(`.toc a[href="#${id}"], .mobile-toc a[href="#${id}"]`);
-          
-          if (entry.isIntersecting && tocLinks.length > 0) {
-            // Remove active class from all links
-            document.querySelectorAll('.toc a, .mobile-toc a').forEach(link => 
-              link.classList.remove('bg-zinc-100', 'dark:bg-zinc-800', 'active')
-            );
-            
-            // Add active class to current links
-            tocLinks.forEach(link => 
-              link.classList.add('bg-zinc-100', 'dark:bg-zinc-800', 'active')
-            );
-          }
-        });
-      }, observerOptions);
-      
-      // Observe all headings
-      headings.forEach(heading => {
-        headingObserver.observe(heading);
-      });
-      
-      // Handle initial state - highlight first heading
-      if (tocLinks.length > 0) {
-        tocLinks[0].classList.add('bg-zinc-100', 'dark:bg-zinc-800', 'active');
-      }
-      
-      return headingObserver; // Return observer for cleanup
-    }
-    
-    return null;
-  }
-  
-  // Initialize mobile TOC functionality
-  function initializeMobileTOC() {
-    // Mobile TOC toggle
-    const mobileTocButton = document.getElementById('mobile-toc-button');
-    const mobileTocDrawer = document.getElementById('mobile-toc');
-    const closeTocButton = document.getElementById('close-toc');
-    
-    if (mobileTocButton && mobileTocDrawer && closeTocButton) {
-      // Remove existing listeners to prevent duplicates
-      const newMobileTocButton = mobileTocButton.cloneNode(true);
-      const newCloseTocButton = closeTocButton.cloneNode(true);
-      
-      if (mobileTocButton.parentNode) {
-        mobileTocButton.parentNode.replaceChild(newMobileTocButton, mobileTocButton);
-      }
-      
-      if (closeTocButton.parentNode) {
-        closeTocButton.parentNode.replaceChild(newCloseTocButton, closeTocButton);
-      }
-      
-      newMobileTocButton.addEventListener('click', () => {
-        mobileTocDrawer.classList.remove('opacity-0', 'pointer-events-none');
-        mobileTocDrawer.querySelector('div').classList.remove('translate-x-full');
-      });
-      
-      newCloseTocButton.addEventListener('click', () => {
-        mobileTocDrawer.classList.add('opacity-0', 'pointer-events-none');
-        mobileTocDrawer.querySelector('div').classList.add('translate-x-full');
-      });
-      
-      // Close when clicking outside
-      const handleOutsideClick = (e) => {
-        if (e.target === mobileTocDrawer) {
-          mobileTocDrawer.classList.add('opacity-0', 'pointer-events-none');
-          mobileTocDrawer.querySelector('div').classList.add('translate-x-full');
-        }
-      };
-      
-      mobileTocDrawer.removeEventListener('click', handleOutsideClick);
-      mobileTocDrawer.addEventListener('click', handleOutsideClick);
-    }
-  }
+  // Removing TOC-related functions
   
   // Add copy buttons to code blocks
   function initializeCodeCopyButtons() {
     const codeBlocks = document.querySelectorAll('pre');
     
     codeBlocks.forEach(block => {
-      // Skip if already processed
-      if (block.classList.contains('code-block-processed')) {
+      // Skip if already processed by either method
+      if (block.classList.contains('code-block-processed') || block.classList.contains('enhanced')) {
         return;
       }
       
@@ -310,7 +118,7 @@ export const prerender = true;
       }
       
       // Add copy button if not already present
-      if (!wrapper.querySelector('.copy-button')) {
+      if (!wrapper.querySelector('.copy-button') && !wrapper.querySelector('.copy-code-button')) {
         const copyButton = document.createElement('button');
         copyButton.className = 'copy-button absolute top-2 right-2 p-1.5 rounded-md bg-zinc-700/50 hover:bg-zinc-700 text-zinc-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200';
         copyButton.innerHTML = `
@@ -383,19 +191,9 @@ export const prerender = true;
     });
   }
   
-  // Store observer reference for cleanup
-  let headingObserver = null;
-  
   // Main initialization function
   function initializeBlogPost() {
-    // Clean up previous observer if it exists
-    if (headingObserver) {
-      headingObserver.disconnect();
-    }
-    
-    // Initialize all components
-    headingObserver = initializeTOC();
-    initializeMobileTOC();
+    // Initialize remaining components
     initializeCodeCopyButtons();
     setupSPATransitions();
     
@@ -421,46 +219,13 @@ export const prerender = true;
 </script>
 
 <style>
-  /* Smooth scrolling for TOC links */
-  html {
-    scroll-behavior: smooth;
-  }
+  /* Removing TOC-related styles */
   
-  /* Active TOC link styling */
-  .toc a.active, .mobile-toc a.active {
-    @apply bg-zinc-100 dark:bg-zinc-800 font-medium;
-  }
-  
-  /* Highlight current section in TOC */
-  @media (min-width: 1024px) {
-    .prose h2[id]::before,
-    .prose h3[id]::before {
-      content: "";
-      display: block;
-      height: 80px;
-      margin-top: -80px;
-      visibility: hidden;
-    }
-    
-    /* Đảm bảo TOC không bị footer đè lên */
-    .toc {
-      max-height: calc(100vh - 250px);
-      overflow-y: auto;
-      padding-bottom: 100px; /* Thêm padding dưới để tránh bị footer che */
-    }
-  }
-  
-  /* Custom scrollbar for TOC */
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 4px;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-track {
-    @apply bg-transparent;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply bg-zinc-300 dark:bg-zinc-700 rounded-full;
+  /* Language badge styling */
+  .language-badge {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    text-transform: lowercase;
+    letter-spacing: 0.05em;
   }
   
   /* Extra small screens */
@@ -506,18 +271,19 @@ export const prerender = true;
   .prose blockquote {
     @apply border-l-4 border-zinc-300 dark:border-zinc-700 pl-4 italic text-zinc-700 dark:text-zinc-300 my-4 sm:my-6;
   }
-  
+    
   .prose code {
     @apply bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-800 dark:text-zinc-200 text-sm font-medium;
   }
   
   .prose pre {
-    @apply bg-zinc-900 dark:bg-zinc-800/90 text-zinc-200 p-3 sm:p-4 rounded-lg overflow-x-auto text-xs sm:text-sm my-4 sm:my-6 shadow-md;
+    @apply bg-[#1e293b] dark:bg-[#1e293b] text-zinc-200 p-3 sm:p-4 rounded-lg overflow-x-auto text-xs sm:text-sm my-4 sm:my-6 shadow-md !important;
   }
   
   .prose pre code {
-    @apply bg-transparent p-0 text-zinc-200 dark:text-zinc-200;
+    @apply bg-transparent p-0 text-zinc-200 dark:text-zinc-200 !important;
   }
+  
   
   .prose img {
     @apply rounded-lg shadow-md my-6 sm:my-8 mx-auto max-w-full h-auto;

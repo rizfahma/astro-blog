@@ -26,25 +26,10 @@ const { title, description = "A minimalist personal blog" } = Astro.props;
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   </head>
   <body class="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col">
-    <!-- Loading screen - only shown on initial page load -->
-    <div id="loading-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-zinc-900 transition-opacity duration-700">
-      <div class="relative">
-        <!-- Minimalist logo animation -->
-        <div class="loading-logo">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-zinc-900 dark:text-zinc-100">
-            <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="2" class="loading-circle" />
-            <path d="M15 20L18 23L25 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="loading-check" />
-          </svg>
-        </div>
-        <!-- Loading text -->
-        <div class="mt-4 text-center">
-          <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400 loading-text">Loading</span>
-        </div>
-      </div>
-    </div>
-    
     <!-- Page transition overlay - for smooth transitions between pages -->
-    <div id="page-transition" class="fixed inset-0 z-40 bg-white dark:bg-zinc-900 opacity-0 pointer-events-none transition-opacity duration-300"></div>
+    <div id="page-transition" class="fixed inset-0 z-40 bg-white dark:bg-zinc-900 opacity-0 pointer-events-none transition-opacity duration-300 flex items-center justify-center">
+      <div class="transition-spinner"></div>
+    </div>
     
     <!-- Background component with dot pattern and ambient glow -->
     <Background />
@@ -58,193 +43,196 @@ const { title, description = "A minimalist personal blog" } = Astro.props;
     <Footer />
     
     <script>
-      // Check if this is the first visit to the site in this session
-      const isFirstVisit = !sessionStorage.getItem('visited');
-      
-      // Loading screen animation - only on first visit
+      // Enhanced SPA transition system with history API
       document.addEventListener('DOMContentLoaded', () => {
-        const loadingScreen = document.getElementById('loading-screen');
-        
-        // If not first visit, hide loading screen immediately
-        if (!isFirstVisit && loadingScreen) {
-          loadingScreen.style.display = 'none';
-          return;
-        }
-        
-        // Mark as visited for future navigation
-        sessionStorage.setItem('visited', 'true');
-        
-        // Ensure content is loaded before hiding the loading screen
-        window.addEventListener('load', () => {
-          // Add a small delay for a smoother experience
-          setTimeout(() => {
-            if (loadingScreen) {
-              loadingScreen.classList.add('opacity-0');
-              // Remove from DOM after transition completes
-              setTimeout(() => {
-                loadingScreen.style.display = 'none';
-                // Dispatch event to notify components that loading is complete
-                document.dispatchEvent(new CustomEvent('page-fully-loaded'));
-              }, 700);
-            }
-          }, 300);
-        });
-        
-        // Fallback: Hide loading screen after 3 seconds even if load event doesn't fire
-        setTimeout(() => {
-          if (loadingScreen && !loadingScreen.classList.contains('opacity-0')) {
-            loadingScreen.classList.add('opacity-0');
-            setTimeout(() => {
-              loadingScreen.style.display = 'none';
-              // Dispatch event to notify components that loading is complete
-              document.dispatchEvent(new CustomEvent('page-fully-loaded'));
-            }, 700);
-          }
-        }, 3000);
-      });
-      
-      // Enhanced SPA transition system
-      function setupSPATransitions() {
         const pageTransition = document.getElementById('page-transition');
+        const mainContent = document.querySelector('main');
         
-        // Create a loading spinner for the transition overlay if it doesn't exist
-        if (pageTransition && !pageTransition.querySelector('.transition-spinner')) {
-          const spinner = document.createElement('div');
-          spinner.className = 'transition-spinner';
-          pageTransition.appendChild(spinner);
+        // Initialize content with entrance animation
+        if (mainContent) {
+          mainContent.classList.add('content-entering');
+          setTimeout(() => {
+            mainContent.classList.remove('content-entering');
+          }, 800);
         }
         
-        // Handle all internal navigation links
-        document.querySelectorAll('a').forEach(link => {
-          // Skip links that are already handled, anchor links, external links, or have special attributes
-          if (
-            link.hasAttribute('data-spa-handled') ||
-            !link.href.startsWith(window.location.origin) || 
-            link.href.includes('#') ||
-            link.hasAttribute('target') ||
-            link.hasAttribute('download') ||
-            link.getAttribute('rel') === 'external'
-          ) {
-            return;
-          }
-          
-          // Mark as handled to avoid duplicate listeners
-          link.setAttribute('data-spa-handled', 'true');
-          
-          link.addEventListener('click', (e) => {
-            // Don't handle if modifier keys are pressed (for opening in new tab, etc.)
-            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
-              return;
-            }
-            
-            e.preventDefault();
-            const targetHref = link.href;
-            
-            // Don't transition if clicking the current page
-            if (targetHref === window.location.href) {
-              return;
-            }
-            
-            // Add exit animation class to body
-            document.body.classList.add('page-exiting');
-            
-            // Show transition overlay with animation
+        // Function to load content via fetch
+        async function loadContent(url) {
+          try {
+            // Show transition overlay
             if (pageTransition) {
               pageTransition.classList.remove('opacity-0', 'pointer-events-none');
               pageTransition.classList.add('opacity-100');
-              
-              // Add entrance animation class
-              pageTransition.classList.add('transition-entering');
             }
             
-            // Store scroll position for back button
-            const scrollPosition = window.scrollY;
-            sessionStorage.setItem('scrollPosition_' + window.location.pathname, scrollPosition.toString());
+            // Fade out current content
+            if (mainContent) {
+              mainContent.style.opacity = '0';
+              mainContent.style.transform = 'translateY(10px)';
+            }
             
-            // Navigate after transition effect
-            setTimeout(() => {
-              // Dispatch custom event before navigation
-              document.dispatchEvent(new CustomEvent('spa-navigation-start', { 
-                detail: { 
-                  from: window.location.pathname,
-                  to: new URL(targetHref).pathname
+            // Fetch the new page content
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+            const html = await response.text();
+            
+            // Create a temporary element to parse the HTML
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Extract the main content
+            const newContent = doc.querySelector('main');
+            if (!newContent) throw new Error('Could not find main content in the fetched page');
+            
+            // Extract the title
+            const newTitle = doc.querySelector('title');
+            if (newTitle) {
+              document.title = newTitle.textContent;
+            }
+            
+            // Extract meta description
+            const newDescription = doc.querySelector('meta[name="description"]');
+            if (newDescription) {
+              const currentDescription = document.querySelector('meta[name="description"]');
+              if (currentDescription) {
+                currentDescription.setAttribute('content', newDescription.getAttribute('content') || '');
+              }
+            }
+            
+            // Wait a bit for transition effect
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            // Replace the content
+            if (mainContent && newContent) {
+              mainContent.innerHTML = newContent.innerHTML;
+              
+              // Run scripts in the new content
+              Array.from(newContent.querySelectorAll('script')).forEach(oldScript => {
+                const newScript = document.createElement('script');
+                Array.from(oldScript.attributes).forEach(attr => {
+                  newScript.setAttribute(attr.name, attr.value);
+                });
+                newScript.textContent = oldScript.textContent;
+                if (oldScript.parentNode) {
+                  mainContent.appendChild(newScript);
                 }
-              }));
-              
-              window.location.href = targetHref;
-            }, 400);
-          });
-        });
-        
-        // Handle page load/restore
-        window.addEventListener('pageshow', (event) => {
-          // Remove transition overlay when page is shown (including back/forward navigation)
-          if (pageTransition) {
-            pageTransition.classList.add('opacity-0', 'pointer-events-none');
-            pageTransition.classList.remove('opacity-100', 'transition-entering');
-          }
-          
-          // Remove animation classes
-          document.body.classList.remove('page-exiting');
-          
-          // Restore scroll position if coming from back/forward navigation
-          if (event.persisted) {
-            const savedScrollPosition = sessionStorage.getItem('scrollPosition_' + window.location.pathname);
-            if (savedScrollPosition) {
-              setTimeout(() => {
-                window.scrollTo(0, parseInt(savedScrollPosition));
-              }, 100);
+              });
             }
             
-            // Dispatch custom event for persisted navigation (back/forward)
-            document.dispatchEvent(new CustomEvent('spa-navigation-complete', { 
-              detail: { 
-                navigationType: 'persist',
-                pathname: window.location.pathname
-              }
+            // Fade in new content with animation
+            if (mainContent) {
+              mainContent.style.opacity = '0';
+              mainContent.style.transform = 'translateY(10px)';
+              
+              setTimeout(() => {
+                mainContent.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                mainContent.style.opacity = '1';
+                mainContent.style.transform = 'translateY(0)';
+                
+                // Add entrance animation class
+                mainContent.classList.add('content-entering');
+                setTimeout(() => {
+                  mainContent.classList.remove('content-entering');
+                }, 800);
+              }, 50);
+            }
+            
+            // Hide transition overlay
+            if (pageTransition) {
+              setTimeout(() => {
+                pageTransition.classList.add('opacity-0', 'pointer-events-none');
+                pageTransition.classList.remove('opacity-100');
+              }, 200);
+            }
+            
+            // Dispatch custom event for content loaded
+            document.dispatchEvent(new CustomEvent('spa-content-loaded', { 
+              detail: { url }
             }));
+            
+            // Scroll to top or to saved position
+            window.scrollTo(0, 0);
+            
+            // Re-attach event listeners to new content
+            attachLinkListeners();
+            
+          } catch (error) {
+            console.error('Error loading content:', error);
+            
+            // Fallback to traditional navigation on error
+            window.location.href = url;
+          }
+        }
+        
+        // Function to attach event listeners to all links
+        function attachLinkListeners() {
+          document.querySelectorAll('a').forEach(link => {
+            // Skip links that are already handled, anchor links, external links, or have special attributes
+            if (
+              link.hasAttribute('data-spa-handled') ||
+              !link.href.startsWith(window.location.origin) || 
+              link.href.includes('#') ||
+              link.hasAttribute('target') ||
+              link.hasAttribute('download') ||
+              link.getAttribute('rel') === 'external' ||
+              link.getAttribute('rel') === 'nofollow'
+            ) {
+              return;
+            }
+            
+            // Mark as handled to avoid duplicate listeners
+            link.setAttribute('data-spa-handled', 'true');
+            
+            link.addEventListener('click', (e) => {
+              // Don't handle if modifier keys are pressed (for opening in new tab, etc.)
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+                return;
+              }
+              
+              e.preventDefault();
+              const targetHref = link.href;
+              
+              // Don't transition if clicking the current page
+              if (targetHref === window.location.href) {
+                return;
+              }
+              
+              // Update browser history
+              window.history.pushState({ path: targetHref }, '', targetHref);
+              
+              // Load the new content
+              loadContent(targetHref);
+            });
+          });
+        }
+        
+        // Initial attachment of link listeners
+        attachLinkListeners();
+        
+        // Handle browser back/forward navigation
+        window.addEventListener('popstate', (e) => {
+          if (e.state && e.state.path) {
+            loadContent(e.state.path);
           } else {
-            // Dispatch custom event for fresh navigation
-            document.dispatchEvent(new CustomEvent('spa-navigation-complete', { 
-              detail: { 
-                navigationType: 'fresh',
-                pathname: window.location.pathname
-              }
-            }));
+            loadContent(window.location.href);
           }
         });
         
-        // Animate content entrance
-        function animateContentEntrance() {
-          // Add entrance animation class to main content
-          const mainContent = document.querySelector('main');
-          if (mainContent) {
-            mainContent.classList.add('content-entering');
-            
-            // Remove class after animation completes
-            setTimeout(() => {
-              mainContent.classList.remove('content-entering');
-            }, 1000);
+        // Check RSS feed availability
+        const checkAndGenerateRSS = async () => {
+          try {
+            const response = await fetch('/rss.xml');
+            if (!response.ok) {
+              console.warn('RSS feed not found. Please generate it using an RSS plugin for Astro.');
+            }
+          } catch (error) {
+            console.warn('Could not check RSS feed status.');
           }
-        }
+        };
         
-        // Run entrance animation
-        if (!isFirstVisit) {
-          animateContentEntrance();
-        } else {
-          // For first visit, wait until loading screen is gone
-          document.addEventListener('page-fully-loaded', animateContentEntrance);
-        }
-      }
-      
-      // Initialize SPA transitions
-      document.addEventListener('DOMContentLoaded', setupSPATransitions);
-      
-      // Re-initialize when content changes via Astro's view transitions
-      document.addEventListener('astro:page-load', setupSPATransitions);
-      
-      // For compatibility with custom transition system
-      document.addEventListener('page-transition-complete', setupSPATransitions);
+        // Check RSS feed availability
+        checkAndGenerateRSS();
+      });
       
       // Theme handling with transition effects
       function setupThemeHandling() {
@@ -275,90 +263,25 @@ const { title, description = "A minimalist personal blog" } = Astro.props;
 </html>
 
 <style>
-  /* Loading screen animations */
-  .loading-circle {
-    stroke-dasharray: 120;
-    stroke-dashoffset: 120;
-    animation: circle-draw 1.5s ease-in-out infinite;
-  }
-  
-  .loading-check {
-    stroke-dasharray: 30;
-    stroke-dashoffset: 30;
-    animation: check-draw 1.5s ease-in-out infinite;
-  }
-  
-  .loading-text::after {
-    content: '...';
-    display: inline-block;
-    animation: loading-dots 1.5s infinite;
-    width: 24px;
-    text-align: left;
-  }
-  
-  @keyframes circle-draw {
-    0% {
-      stroke-dashoffset: 120;
-    }
-    50% {
-      stroke-dashoffset: 0;
-    }
-    100% {
-      stroke-dashoffset: 120;
-    }
-  }
-  
-  @keyframes check-draw {
-    0%, 40% {
-      stroke-dashoffset: 30;
-    }
-    60%, 80% {
-      stroke-dashoffset: 0;
-    }
-    100% {
-      stroke-dashoffset: 30;
-    }
-  }
-  
-  @keyframes loading-dots {
-    0% { content: '.'; }
-    33% { content: '..'; }
-    66% { content: '...'; }
-    100% { content: '.'; }
-  }
-  
-  /* Ensure the loading screen respects dark mode */
-  #loading-screen {
-    transition: opacity 0.7s ease, background-color 0.5s ease;
-  }
-  
   /* Enhanced page transition effects */
   #page-transition {
-    transition: opacity 0.4s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    transition: opacity 0.3s ease;
+    backdrop-filter: blur(4px);
   }
   
   /* Transition spinner animation */
   .transition-spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba(0, 0, 0, 0.1);
+    width: 30px;
+    height: 30px;
+    border: 2px solid rgba(0, 0, 0, 0.1);
     border-radius: 50%;
     border-top-color: #3b82f6;
-    animation: spin 0.8s ease-in-out infinite;
-    opacity: 0;
-    transition: opacity 0.2s ease;
+    animation: spin 0.7s linear infinite;
   }
   
   :global(.dark) .transition-spinner {
     border-color: rgba(255, 255, 255, 0.1);
     border-top-color: #60a5fa;
-  }
-  
-  #page-transition.transition-entering .transition-spinner {
-    opacity: 1;
   }
   
   @keyframes spin {
@@ -373,7 +296,7 @@ const { title, description = "A minimalist personal blog" } = Astro.props;
   }
   
   main.content-entering {
-    animation: content-fade-in 0.8s ease forwards;
+    animation: content-fade-in 0.6s ease forwards;
   }
   
   @keyframes content-fade-in {
@@ -387,25 +310,8 @@ const { title, description = "A minimalist personal blog" } = Astro.props;
     }
   }
   
-  /* Page exit animation */
-  body.page-exiting {
-    opacity: 0.8;
-    transition: opacity 0.3s ease;
-  }
-  
   /* Theme transition effect */
   body.theme-transitioning * {
     transition-duration: 0.3s !important;
   }
-  
-  /* Smooth page transitions */
-  html.is-changing body {
-    opacity: 0.5;
-  }
-  
-  html.is-animating body {
-    opacity: 1;
-    transition: opacity 0.5s ease;
-  }
 </style>
-

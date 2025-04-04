@@ -1,3 +1,4 @@
+/* Remove all the complex mobile menu styles and keep only what's necessary */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,246 +8,117 @@
     font-family: "Inter", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    --content-transition: 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-    --theme-transition: 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-    /* Add responsive font size variables */
-    --base-font-size: 16px;
-    --mobile-font-size: 14px;
-    
-    /* Theme transition variables */
-    --theme-ease: cubic-bezier(0.65, 0, 0.35, 1);
-    --theme-duration: 0.7s;
-  }
-
-  /* Existing animations */
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  /* Theme transition animation */
-  @keyframes themeTransition {
-    0% { opacity: 0.8; }
-    50% { opacity: 0.95; }
-    100% { opacity: 1; }
+    --theme-transition: 0.3s ease;
   }
 
   html {
     scroll-behavior: smooth;
     scroll-padding-top: 5rem;
-    --light-bg: #ffffff;
-    --dark-bg: #18181b;
-    --light-text: #18181b;
-    --dark-text: #f4f4f5;
-    /* Responsive font size adjustment */
-    font-size: var(--base-font-size);
-  }
-
-  /* Improved theme transition for all elements */
-  html, body, * {
-    transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
-    transition-timing-function: var(--theme-ease);
-    transition-duration: var(--theme-duration);
-  }
-  
-  /* Optimize transitions for performance */
-  html.theme-transitioning * {
-    animation: none !important;
-    transition: none !important;
   }
 
   body {
     @apply min-h-screen bg-white text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100;
-    animation: fadeIn 0.8s ease-out;
-    background-attachment: fixed;
-    will-change: background-color, color;
-    /* Add responsive padding */
-    padding: 0;
     margin: 0;
+    padding: 0;
     overflow-x: hidden;
   }
 
-  /* Responsive font size for mobile */
-  @media (max-width: 640px) {
-    html {
-      font-size: var(--mobile-font-size);
-      scroll-padding-top: 4rem;
-    }
+  /* Simple theme transition */
+  body, a, button {
+    transition: background-color var(--theme-transition), 
+                color var(--theme-transition), 
+                border-color var(--theme-transition);
   }
-
-  html, html * {
-    transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
-    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-    transition-duration: var(--theme-transition);
-  }
-
-  body {
-    @apply min-h-screen bg-white text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100;
-    animation: fadeIn 0.8s ease-out, themeTransition var(--theme-transition);
-    background-attachment: fixed;
-    will-change: background-color, color;
-    /* Add responsive padding */
-    padding: 0;
-    margin: 0;
-    overflow-x: hidden;
-  }
-
-  /* Existing selection and focus styles... */
 }
 
-@layer components {
-  /* Existing prose styles... */
-
-  /* Responsive adjustments for mobile */
-  @media (max-width: 640px) {
-    .prose {
-      @apply text-sm;
-    }
-    
-    .prose h1 {
-      @apply text-2xl;
-    }
-    
-    .prose h2 {
-      @apply text-xl;
-    }
-    
-    .prose h3 {
-      @apply text-lg;
-    }
-    
-    .prose pre {
-      @apply p-3 text-xs;
-    }
-  }
-
-  /* Responsive container class */
-  .responsive-container {
-    @apply w-full px-4 sm:px-6 md:px-8 mx-auto;
-    max-width: 100%;
+/* Minimal responsive styles */
+@media (max-width: 640px) {
+  html {
+    scroll-padding-top: 4rem;
   }
   
-  @media (min-width: 640px) {
-    .responsive-container {
-      max-width: 640px;
-    }
+  /* Better touch targets on mobile */
+  button, a {
+    @apply min-h-[44px];
   }
-  
-  @media (min-width: 768px) {
-    .responsive-container {
-      max-width: 768px;
-    }
-  }
-  
-  @media (min-width: 1024px) {
-    .responsive-container {
-      max-width: 1024px;
-    }
-  }
-  
-  @media (min-width: 1280px) {
-    .responsive-container {
-      max-width: 1280px;
-    }
-  }
-
-  /* Mobile navigation improvements */
-  @media (max-width: 640px) {
-    .mobile-nav-item {
-      @apply py-3 px-4 text-base w-full text-center;
-    }
-    
-    .mobile-menu-container {
-      @apply fixed inset-0 bg-white dark:bg-zinc-900 z-50 flex flex-col items-center justify-center;
-    }
-  }
-
-  /* Responsive card layouts */
-  .responsive-card {
-    @apply w-full rounded-xl p-4 sm:p-6;
-  }
-  
-  /* Responsive grid system */
-  .responsive-grid {
-    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6;
-  }
-  
-  /* Responsive typography */
-  .responsive-heading {
-    @apply text-2xl sm:text-3xl md:text-4xl font-bold;
-  }
-  
-  .responsive-subheading {
-    @apply text-xl sm:text-2xl font-semibold;
-  }
-  
-  .responsive-text {
-    @apply text-sm sm:text-base;
-  }
-
-  /* Responsive images */
-  .responsive-image {
-    @apply w-full h-auto object-cover;
-    max-height: 50vh;
-  }
-  
-  @media (max-width: 640px) {
-    .responsive-image {
-      max-height: 30vh;
-    }
-  }
-
-  /* Improve touch targets for mobile */
-  @media (max-width: 640px) {
-    button, a, .clickable {
-      @apply min-h-[44px] min-w-[44px];
-      padding: 0.5rem 0.75rem;
-    }
-    
-    input, select, textarea {
-      @apply min-h-[44px];
-      font-size: 16px; /* Prevents iOS zoom on focus */
-    }
-  }
-
-  /* Existing theme transition classes... */
-  
-  /* Mobile-specific animations */
-  @media (max-width: 640px) {
-    .animate-blob {
-      animation-duration: 12s; /* Slower on mobile for performance */
-    }
-    
-    .theme-transition-all {
-      transition-duration: 0.4s; /* Slightly faster on mobile */
-    }
-  }
-
-  /* Existing theme classes... */
 }
 
-/* Add responsive utility classes */
-@layer utilities {
-  .hide-on-mobile {
-    @apply hidden sm:block;
-  }
-  
-  .show-on-mobile {
-    @apply block sm:hidden;
-  }
-  
-  .mobile-full-width {
-    @apply -mx-4 sm:mx-0;
-    width: calc(100% + 2rem);
-  }
-  
-  .mobile-touch-scroll {
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-    scrollbar-width: none;
-  }
-  
-  .mobile-touch-scroll::-webkit-scrollbar {
-    display: none;
-  }
+
+/* Add smooth animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Apply animations to elements */
+.animate-fade-in {
+  animation: fadeIn 0.6s ease forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s ease forwards;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.6s ease forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.6s ease forwards;
+}
+
+/* Staggered animation delays */
+.delay-100 {
+  animation-delay: 0.1s;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+.delay-300 {
+  animation-delay: 0.3s;
+}
+
+.delay-400 {
+  animation-delay: 0.4s;
+}
+
+/* Smooth hover transitions */
+a, button {
+  transition: all 0.2s ease;
+}
+
+a:hover, button:hover {
+  transform: translateY(-1px);
+}
+
+/* Smooth page transitions */
+.page-transition {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.page-entering {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-entered {
+  opacity: 1;
+  transform: translateY(0);
 }
